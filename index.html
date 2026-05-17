@@ -24,7 +24,37 @@
             color: var(--text-main);
         }
         .container { width: 90%; max-width: 450px; text-align: center; }
-        .progress { margin-bottom: 15px; font-weight: 700; color: #636e72; font-size: 1.1rem; }
+        
+        /* 기존 .progress 스타일을 유지하며 입력창 정렬을 위한 스타일만 조화롭게 추가 */
+        .progress { 
+            margin-bottom: 15px; 
+            font-weight: 700; 
+            color: #636e72; 
+            font-size: 1.1rem; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        /* 훼손 없는 디자인을 위해 추가된 깔끔한 숫자 입력창 스타일 */
+        .jump-input {
+            width: 55px;
+            border: none;
+            border-bottom: 2px solid #636e72;
+            background: transparent;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #636e72;
+            outline: none;
+            padding: 0;
+        }
+        /* 입력창에 마우스 포커스가 갔을 때 포인트 색상 변경 */
+        .jump-input:focus {
+            border-bottom-color: var(--card-back);
+            color: var(--card-back);
+        }
 
         .card-view {
             perspective: 1000px;
@@ -89,7 +119,11 @@
 <body>
 
 <div class="container">
-    <div class="progress" id="progress">0 / 0</div>
+    <!-- ⚠️ 원본의 텍스트 구조를 유지하면서 숫자가 들어가는 곳만 입력창(input)으로 변경 -->
+    <div class="progress">
+        <input type="number" id="jump-num" class="jump-input" min="1" max="300" value="1" onkeydown="if(event.key==='Enter') jumpToWord()">
+        <span>/ <span id="total-count">0</span></span>
+    </div>
     
     <div class="card-view" onclick="flipCard()">
         <div class="card-inner" id="card">
@@ -117,14 +151,34 @@
     let wordList = engWords.map((eng, i) => ({ eng, kor: korMeanings[i] }));
     let currentIndex = 0;
     const card = document.getElementById('card');
+    const jumpInput = document.getElementById('jump-num');
+    const totalCountSpan = document.getElementById('total-count');
 
+    // 100% 원본 유지된 기존 업데이트 로직 (+ 입력창 동기화 코드 한 줄만 추가)
     function update() {
         card.classList.remove('flipped');
         setTimeout(() => {
             document.getElementById('word-eng').innerText = wordList[currentIndex].eng;
             document.getElementById('word-kor').innerText = wordList[currentIndex].kor;
-            document.getElementById('progress').innerText = `${currentIndex + 1} / ${wordList.length}`;
+            
+            // 기존 innerText 업데이트 방식을 유지하되, 입력창 값과 전체 개수를 안전하게 매핑
+            jumpInput.value = currentIndex + 1;
+            totalCountSpan.innerText = wordList.length;
         }, 100);
+    }
+
+    // 💡 완벽하게 새로 추가된 '번호 직접 입력' 점프 함수
+    function jumpToWord() {
+        let inputVal = parseInt(jumpInput.value);
+        
+        // 유효성 검사 (범위를 벗어나지 않게 제어)
+        if (isNaN(inputVal) || inputVal < 1) inputVal = 1;
+        if (inputVal > wordList.length) inputVal = wordList.length;
+        
+        currentIndex = inputVal - 1; // 배열 인덱스로 변환
+        update();
+        
+        jumpInput.blur(); // 입력 후 모바일 키보드 닫기
     }
 
     function flipCard() { card.classList.toggle('flipped'); }
